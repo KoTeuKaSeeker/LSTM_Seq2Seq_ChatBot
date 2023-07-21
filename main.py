@@ -51,6 +51,9 @@ def get_train_data(questions, replies, start_token, end_token, padding_token, to
 
 
 def create_encoder_decoder_model(dim_embedding, dim_lstm_1, dim_lstm_2, dim_dense, padding_token, count_tokens):
+    #encoder
+    #####################################################################
+
     encoder_input = layers.Input(shape=1, name="encoder_input")
     encoder_masking = layers.Masking(mask_value=padding_token, input_shape=(None, 1), name="encoder_masking")(encoder_input)
     encoder_embedding = layers.Embedding(input_dim=count_tokens, output_dim=dim_embedding, input_shape=(None,), name="encoder_embedding")(encoder_masking)
@@ -61,6 +64,7 @@ def create_encoder_decoder_model(dim_embedding, dim_lstm_1, dim_lstm_2, dim_dens
     encoder_states_1 = [encoder_state_h_1, encoder_state_c_1]
     encoder_states_2 = [encoder_state_h_2, encoder_state_c_2]
 
+    #decoder
     #####################################################################
 
     decoder_input = layers.Input(shape=1, name="decoder_input")
@@ -74,74 +78,6 @@ def create_encoder_decoder_model(dim_embedding, dim_lstm_1, dim_lstm_2, dim_dens
 
     encoder_decoder_model = keras.Model(inputs=[encoder_input, decoder_input], outputs=decoder_dense)
     encoder_decoder_model.compile(optimizer="adam", loss="mse")
-
-    # encoder
-    #####################################################################
-    encoder_input = layers.Input(shape=1, name="encoder_input")
-    encoder_masking = layers.Masking(mask_value=padding_token,
-                                     input_shape=(None, 1),
-                                     name="encoder_masking")(encoder_input)
-
-    encoder_embedding = layers.Embedding(input_dim=count_tokens,
-                                         output_dim=dim_embedding,
-                                         input_shape=(None,),
-                                         name="encoder_embedding")(encoder_masking)
-
-    encoder_lstm_1, encoder_state_h_1, encoder_state_c_1 = layers.LSTM(units=dim_lstm_1,
-                                                                       input_shape=(None,),
-                                                                       return_sequences=True,
-                                                                       return_state=True,
-                                                                       name="encoder_lstm_1")(encoder_embedding)
-
-
-    encoder_lstm_2, encoder_state_h_2, encoder_state_c_2 = layers.LSTM(units=dim_lstm_2,
-                                                                       input_shape=(None,),
-                                                                       return_sequences=True,
-                                                                       return_state=True,
-                                                                       name="encoder_lstm_2")(encoder_lstm_1)
-
-    encoder_states_1 = [encoder_state_h_1, encoder_state_c_1]
-    encoder_states_2 = [encoder_state_h_2, encoder_state_c_2]
-
-    # decoder
-    #####################################################################
-
-    decoder_input = layers.Input(shape=1, name="decoder_input")
-
-    decoder_embedding = layers.Embedding(input_dim=count_tokens,
-                                         output_dim=dim_embedding,
-                                         input_shape=(None,),
-                                         name="decoder_embedding")(decoder_input)
-
-    decoder_lstm_1, _, _ = layers.LSTM(units=dim_lstm_1,
-                                       input_shape=(None,),
-                                       return_sequences=True,
-                                       return_state=True,
-                                       name="decoder_lstm_1")(decoder_embedding, initial_state=encoder_states_1)
-
-    decoder_lstm_2, _, _ = layers.LSTM(units=dim_lstm_2,
-                                       input_shape=(None,),
-                                       return_sequences=True,
-                                       return_state=True,
-                                       name="decoder_lstm_2")(decoder_lstm_1, initial_state=encoder_states_2)
-
-    decoder_dense = layers.Dense(units=dim_dense, activation="sigmoid", name="decoder_dense")(decoder_lstm_2)
-
-    #####################################################################
-
-    encoder_decoder_model = keras.Model(inputs=[encoder_input, decoder_input], outputs=decoder_dense)
-
-
-
-
-
-
-
-
-
-
-
-
 
     return encoder_decoder_model
 
@@ -215,29 +151,7 @@ def get_answer(question, encoder, decoder, max_answer_length, start_token, end_t
     return answer
 
 
-def testing_masking(model: keras.Model, encoder_input_data):
-    r_encoder_input = encoder_input_data[0]
-    r_encoder_masking = model.get_layer("encoder_masking")(r_encoder_input)
-    r_encoder_embedding = model.get_layer("encoder_embedding")(r_encoder_masking)
-
-    r_encoder_lstm_1, r_encoder_state_h_1, r_encoder_state_c_1 = model.get_layer("encoder_lstm_1")(r_encoder_embedding)
-    r_encoder_lstm_2, r_encoder_state_h_2, r_encoder_state_c_2 = model.get_layer("encoder_lstm_2")(r_encoder_lstm_1)
-
-    r_encoder_states_1 = [r_encoder_state_h_1, r_encoder_state_c_1]
-    r_encoder_states_2 = [r_encoder_state_h_2, r_encoder_state_c_2]
-
-    g_encoder_input = encoder_input_data[0]
-    g_encoder_embedding = model.get_layer("encoder_embedding")(g_encoder_input)
-
-    g_encoder_lstm_1, g_encoder_state_h_1, g_encoder_state_c_1 = model.get_layer("encoder_lstm_1")(g_encoder_embedding)
-    g_encoder_lstm_2, g_encoder_state_h_2, g_encoder_state_c_2 = model.get_layer("encoder_lstm_2")(g_encoder_lstm_1)
-
-    g_encoder_states_1 = [g_encoder_state_h_1, g_encoder_state_c_1]
-    g_encoder_states_2 = [g_encoder_state_h_2, g_encoder_state_c_2]
-
-    print('kek')
-
-path_to_dataset = 'data\\conversationRu.txt'
+path_to_dataset = 'data\\conversation.txt'
 
 max_word_count_in_tokenizer = 5000
 count_tokens = max_word_count_in_tokenizer + 4
@@ -265,5 +179,5 @@ encoder_decoder_model.fit([encoder_input_data, decoder_input_data], decoder_targ
 encoder = get_encoder(encoder_decoder_model)
 decoder = get_decoder(encoder_decoder_model, dim_lstm_1, dim_lstm_2)
 
-print(get_answer("Привет как дела?", encoder, decoder, 20, start_token, end_token, tokenizer))
-print(get_answer("Привет как дела?", encoder, decoder, 20, start_token, end_token, tokenizer, sample_input_data=encoder_input_data[0]))
+print(get_answer("hi, how are you doing?", encoder, decoder, 20, start_token, end_token, tokenizer))
+print(get_answer("hi, how are you doing?", encoder, decoder, 20, start_token, end_token, tokenizer, sample_input_data=encoder_input_data[0]))
