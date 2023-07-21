@@ -173,7 +173,6 @@ tokenizer.fit_on_texts([text])
 encoder_input_data, decoder_input_data, decoder_target_data, decoder_output_dim = get_train_data(questions, replies, start_token, end_token, padding_token, tokenizer)
 
 encoder_decoder_model = create_encoder_decoder_model(dim_embedding, dim_lstm_1, dim_lstm_2, decoder_output_dim, padding_token, count_tokens)
-testing_masking(encoder_decoder_model, encoder_input_data)
 encoder_decoder_model.fit([encoder_input_data, decoder_input_data], decoder_target_data, batch_size=32, epochs=1000)
 
 encoder = get_encoder(encoder_decoder_model)
